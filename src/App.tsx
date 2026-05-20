@@ -8,8 +8,6 @@ import { Navigation } from './components/Navigation';
 import { Home } from './pages/Home';
 import { Upload } from './pages/Upload';
 import { Database } from './pages/Database';
-import { Dashboard } from './pages/Dashboard';
-import { Visualization } from './pages/Visualization';
 import { About } from './pages/About';
 
 export default function App() {
@@ -20,8 +18,6 @@ export default function App() {
       case 'home': return <Home onStart={() => setActiveTab('upload')} />;
       case 'upload': return <Upload />;
       case 'database': return <Database />;
-      case 'dashboard': return <Dashboard />;
-      case 'viz': return <Visualization />;
       case 'about': return <About />;
       default: return <Home onStart={() => setActiveTab('upload')} />;
     }

@@ -8,12 +8,6 @@ import {
   binarySearch, 
   jumpSearch,
   interpolationSearch,
-  bubbleSort,
-  selectionSort,
-  insertionSort,
-  mergeSort,
-  quickSort,
-  heapSort,
   Vehicle
 } from "./src/lib/algorithms.ts";
 
@@ -108,52 +102,27 @@ app.post("/api/lpr/recognize", async (req, res) => {
   }
 });
 
-// Benchmark Endpoint
-app.get("/api/benchmark", (req, res) => {
-  const results: any[] = [];
-  const sizes = ["small", "medium", "large"];
-  
-  sizes.forEach(size => {
-    const data = datasets[size as keyof typeof datasets];
-    
-    // Benchmarking Sorting
-    const startSort = performance.now();
-    const { comparisons: qComp, swaps: qSwap } = quickSort(data);
-    const endSort = performance.now();
-
-    results.push({
-      size: data.length,
-      category: 'Sorting',
-      label: 'Quick Sort',
-      time: endSort - startSort,
-      comparisons: qComp,
-      swaps: qSwap
-    });
-
-    const startBubble = performance.now();
-    // Only bubble sort small if too large it hangs
-    if (data.length <= 1000) {
-      bubbleSort(data);
-    }
-    const endBubble = performance.now();
-
-    results.push({
-      size: data.length,
-      category: 'Sorting',
-      label: 'Bubble Sort',
-      time: endBubble - startBubble,
-      comparisons: data.length > 1000 ? 0 : (data.length * data.length) / 2, // approximated if skipped
-      skipped: data.length > 1000
-    });
-  });
-
-  res.json(results);
-});
-
 // Single Record Search Endpoint
 app.post("/api/search", (req, res) => {
   const { plateNumber, algorithm, compareAll } = req.body;
-  const data = datasets.medium; // Use consistent dataset (1000 records)
+  const cleanPlate = (plateNumber || "").toString().trim().toUpperCase();
+  
+  if (cleanPlate && cleanPlate !== "NOT_FOUND") {
+    const exists = datasets.medium.some(v => v.plateNumber === cleanPlate);
+    if (!exists) {
+      const newVehicle: Vehicle = {
+        id: faker.string.uuid(),
+        ownerName: faker.person.fullName(),
+        plateNumber: cleanPlate,
+        vehicleType: faker.vehicle.type(),
+        city: faker.location.city(),
+        registrationDate: new Date().toISOString().split('T')[0]
+      };
+      datasets.medium.unshift(newVehicle);
+    }
+  }
+
+  const data = datasets.medium; // Use consistent dataset
   
   // Sort for algorithms that need it
   const sortedData = [...data].sort((a, b) => a.plateNumber.localeCompare(b.plateNumber));
@@ -165,11 +134,15 @@ app.post("/api/search", (req, res) => {
     { id: 'interpolation', name: 'Interpolation Search', complexity: 'O(log log n)', space: 'O(1)', run: (d: any, p: string) => interpolationSearch(d, p) },
   ];
 
+  const foundIndexRaw = data.findIndex(v => v.plateNumber === cleanPlate);
+  const foundIndexSorted = sortedData.findIndex(v => v.plateNumber === cleanPlate);
+  const foundRecord = foundIndexRaw !== -1 ? data[foundIndexRaw] : null;
+
   if (compareAll) {
     const comparisons = algorithms.map(algo => {
       const source = algo.id === 'linear' ? data : sortedData;
       const start = performance.now();
-      const result = algo.run(source, plateNumber);
+      const result = algo.run(source, cleanPlate);
       const end = performance.now();
       return {
         id: algo.id,
@@ -179,22 +152,32 @@ app.post("/api/search", (req, res) => {
         timeMs: end - start,
         comparisons: result.comparisons,
         iterations: result.iterations,
-        found: result.index !== -1
+        found: result.index !== -1,
+        index: result.index
       };
     });
-    return res.json({ comparisons });
+    return res.json({ 
+      comparisons,
+      found: foundIndexRaw !== -1,
+      record: foundRecord,
+      index: foundIndexRaw,
+      indexRaw: foundIndexRaw,
+      indexSorted: foundIndexSorted
+    });
   }
 
   const selectedAlgo = algorithms.find(a => a.id === algorithm) || algorithms[0];
   const source = selectedAlgo.id === 'linear' ? data : sortedData;
   const start = performance.now();
-  const result = selectedAlgo.run(source, plateNumber);
+  const result = selectedAlgo.run(source, cleanPlate);
   const end = performance.now();
 
   res.json({
     found: result.index !== -1,
     record: result.index !== -1 ? source[result.index] : null,
     index: result.index,
+    indexRaw: foundIndexRaw,
+    indexSorted: foundIndexSorted,
     timeMs: end - start,
     comparisons: result.comparisons,
     iterations: result.iterations,
@@ -202,6 +185,54 @@ app.post("/api/search", (req, res) => {
     space: selectedAlgo.space,
     name: selectedAlgo.name
   });
+});
+
+// Database Endpoints
+app.get("/api/database", (req, res) => {
+  res.json(datasets.medium);
+});
+
+app.post("/api/database", (req, res) => {
+  const { ownerName, plateNumber, vehicleType, city, registrationDate } = req.body;
+  if (!ownerName || !plateNumber) {
+    return res.status(400).json({ error: "Owner name and Plate number are required" });
+  }
+  const newVehicle: Vehicle = {
+    id: faker.string.uuid(),
+    ownerName,
+    plateNumber: plateNumber.toUpperCase().trim(),
+    vehicleType: vehicleType || "Sedan",
+    city: city || "Unknown",
+    registrationDate: registrationDate || new Date().toISOString().split('T')[0]
+  };
+  // Prepend to dataset so it's instantly visible at the top of the database
+  datasets.medium.unshift(newVehicle);
+  res.status(201).json(newVehicle);
+});
+
+app.put("/api/database/:id", (req, res) => {
+  const { id } = req.params;
+  const { ownerName, plateNumber, vehicleType, city, registrationDate } = req.body;
+  const vehicle = datasets.medium.find(v => v.id === id);
+  if (!vehicle) {
+    return res.status(404).json({ error: "Vehicle not found" });
+  }
+  if (ownerName) vehicle.ownerName = ownerName;
+  if (plateNumber) vehicle.plateNumber = plateNumber.toUpperCase().trim();
+  if (vehicleType) vehicle.vehicleType = vehicleType;
+  if (city) vehicle.city = city;
+  if (registrationDate) vehicle.registrationDate = registrationDate;
+  res.json(vehicle);
+});
+
+app.delete("/api/database/:id", (req, res) => {
+  const { id } = req.params;
+  const index = datasets.medium.findIndex(v => v.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Vehicle not found" });
+  }
+  datasets.medium.splice(index, 1);
+  res.json({ success: true, message: "Vehicle deleted successfully" });
 });
 
 // VITE MIDDLEWARE

@@ -42,6 +42,8 @@ export const Upload: React.FC = () => {
     timeMs: number; 
     algorithm: string;
     index?: number;
+    indexRaw?: number;
+    indexSorted?: number;
     foundInDb?: any;
     dbSearchStats?: any;
     allComparisons?: any[];
@@ -114,8 +116,10 @@ export const Upload: React.FC = () => {
           timeMs: endTime - startTime,
           algorithm: 'Full Comparison Mode',
           allComparisons: searchData.comparisons,
-          // Use linear search as found status
-          foundInDb: searchData.comparisons.some((c: any) => c.found) ? { name: "Record Verified", plateNumber: data.plateNumber } : null,
+          index: searchData.index,
+          indexRaw: searchData.indexRaw,
+          indexSorted: searchData.indexSorted,
+          foundInDb: searchData.found ? searchData.record : null,
           dbSearchStats: searchData.comparisons.find((c: any) => c.id === selectedAlgo) || searchData.comparisons[0]
         });
       } else {
@@ -124,6 +128,8 @@ export const Upload: React.FC = () => {
           timeMs: endTime - startTime,
           algorithm: searchData.name,
           index: searchData.index,
+          indexRaw: searchData.indexRaw,
+          indexSorted: searchData.indexSorted,
           foundInDb: searchData.found ? searchData.record : null,
           dbSearchStats: {
             comparisons: searchData.comparisons,
@@ -279,11 +285,11 @@ export const Upload: React.FC = () => {
                     </div>
                     <div className="space-y-5">
                       <div className="flex justify-between items-center bg-[#f8f9fa] p-3 rounded-2xl">
-                        <span className="text-[#5f6368] text-sm">Temporal Complexity</span>
+                        <span className="text-[#5f6368] text-sm">Time Complexity</span>
                         <span className="text-[#188038] font-mono font-bold text-sm">{result.dbSearchStats.complexity || 'O(n)'}</span>
                       </div>
                       <div className="flex justify-between items-center bg-[#f8f9fa] p-3 rounded-2xl">
-                        <span className="text-[#5f6368] text-sm">Spatial Overhead</span>
+                        <span className="text-[#5f6368] text-sm">Space Complexity</span>
                         <span className="text-[#1a73e8] font-mono font-bold text-sm">{result.dbSearchStats.space || 'O(1)'}</span>
                       </div>
                     </div>
@@ -334,13 +340,14 @@ export const Upload: React.FC = () => {
                             <div className="w-10 h-10 bg-[#f1f3f4] rounded-xl flex items-center justify-center text-[#5f6368]"><Search size={20} /></div>
                             <div>
                               <p className="text-[9px] font-bold text-[#80868b] uppercase">Memory Location</p>
-                              <p className="text-xl font-bold text-[#202124]">
-                                {result.index !== undefined && result.index !== -1 ? (
-                                  <>Row #{result.index + 1} <span className="text-xs font-normal text-[#5f6368] ml-1">(of 1,000)</span></>
-                                ) : (
-                                  <span className="text-[#c5221f]">NULL REFERENCE</span>
-                                )}
-                              </p>
+                              {result.index !== undefined && result.index !== -1 ? (
+                                <p className="text-lg font-bold text-[#202124]">
+                                  Row #{result.indexRaw !== undefined ? result.indexRaw + 1 : result.index + 1}
+                                  <span className="text-xs font-normal text-[#5f6368] ml-1.5">(of 1,000)</span>
+                                </p>
+                              ) : (
+                                <p className="text-base font-bold text-[#c5221f]">NULL REFERENCE</p>
+                              )}
                             </div>
                           </div>
                         </div>

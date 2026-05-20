@@ -34,12 +34,12 @@ export const About: React.FC = () => {
             <Code className="text-[#1a73e8] mb-8" size={36} />
             <h4 className="text-xl font-bold text-[#202124] mb-4">Manual Architecture</h4>
             <p className="text-[#5f6368] text-[15px] leading-relaxed mb-6">
-              To preserve academic integrity, 100% of the sorting and searching logic is implemented manually. 
-              Abstracted pointers, recursive stacks, and partition logic are custom-built to expose low-level complexity.
+              To preserve academic integrity, 100% of the searching logic is implemented manually. 
+              Advanced indexes, boundary calculations, and interval estimations are custom-built to expose low-level complexity.
             </p>
             <div className="flex flex-wrap gap-2">
               <span className="px-3 py-1 bg-blue-50 text-[#1a73e8] text-[10px] font-bold uppercase rounded-full border border-blue-100">Custom B-Search</span>
-              <span className="px-3 py-1 bg-blue-50 text-[#1a73e8] text-[10px] font-bold uppercase rounded-full border border-blue-100">Quick-Pivot Logic</span>
+              <span className="px-3 py-1 bg-blue-50 text-[#1a73e8] text-[10px] font-bold uppercase rounded-full border border-blue-100">Jump-Step Logic</span>
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 {
-  "name": "DSA Plate Analyzer",
-  "description": "A comprehensive license plate recognition system integrated with deep analysis of Data Structures and Algorithms, including manual implementations of searching and sorting algorithms with complexity visualizations.",
+  "name": "License Plate Recognition System",
+  "description": "An advanced multimodal License Plate Recognition (LPR) system coupled with deep analytical searches and complexity benchmarking tools.",
   "requestFramePermissions": ["camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
